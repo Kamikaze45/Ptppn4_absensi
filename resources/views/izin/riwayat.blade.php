@@ -1,0 +1,894 @@
+@extends('layouts.app')
+
+@section('title', 'Riwayat Pengajuan Surat')
+
+@push('styles')
+<style>
+/* ─── Reset & Base ─────────────────────────────── */
+.rw-wrap { max-width:1080px; margin:0 auto; }
+
+/* ─── Hero ─────────────────────────────────────── */
+.rw-hero {
+    background: linear-gradient(135deg, #064e35 0%, #0f7a52 60%, #16a367 100%);
+    border-radius: 20px;
+    padding: 2rem 2rem 1.75rem;
+    margin-bottom: 1.75rem;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+}
+.rw-hero::after {
+    content: '';
+    position: absolute;
+    width: 320px; height: 320px;
+    background: rgba(255,255,255,.06);
+    border-radius: 50%;
+    top: -100px; right: -60px;
+    pointer-events: none;
+}
+.rw-hero-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -.3px;
+    margin: 0 0 .3rem;
+}
+.rw-hero-sub {
+    font-size: .83rem;
+    color: rgba(255,255,255,.7);
+    margin: 0;
+}
+.rw-hero-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+}
+.rw-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .45rem 1.05rem;
+    border-radius: 10px;
+    font-size: .8rem;
+    font-weight: 700;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    text-decoration: none;
+    backdrop-filter: blur(6px);
+    transition: background .18s, transform .15s;
+}
+.rw-pill-btn:hover {
+    background: rgba(255,255,255,.28);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* ─── Stats Row ─────────────────────────────────── */
+.rw-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+}
+.rw-stat {
+    background: #fff;
+    border: 1px solid #eef0f4;
+    border-radius: 14px;
+    padding: .9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,.04);
+    transition: box-shadow .18s;
+}
+.rw-stat:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.rw-stat-icon {
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.rw-stat-val { font-size: 1.5rem; font-weight: 800; color: #111827; line-height: 1; }
+.rw-stat-lbl { font-size: .7rem; color: #9ca3af; font-weight: 600; margin-top: .1rem; }
+
+/* ─── Filter Tabs ───────────────────────────────── */
+.rw-tabs {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+.rw-tab {
+    padding: .42rem .95rem;
+    border-radius: 9px;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    transition: all .18s;
+}
+.rw-tab:hover { border-color: #0f7a52; color: #0f7a52; }
+.rw-tab.active { background: #0f7a52; color: #fff; border-color: #0f7a52; }
+.rw-tab .cnt {
+    font-size: .65rem;
+    background: rgba(255,255,255,.22);
+    border-radius: 20px;
+    padding: .05rem .4rem;
+}
+.rw-tab:not(.active) .cnt { background: #f3f4f6; color: #374151; }
+
+/* ─── Card / Table ──────────────────────────────── */
+.rw-card {
+    background: #fff;
+    border: 1px solid #eef0f4;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+}
+.rw-card-head {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f4f4f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+.rw-card-head-title {
+    font-size: .88rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.rw-count-badge {
+    background: #f0fdf4;
+    color: #0f7a52;
+    border-radius: 20px;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .28rem .75rem;
+}
+
+/* Table */
+.rw-table { width: 100%; border-collapse: collapse; }
+.rw-table thead th {
+    background: #f8f9fb;
+    padding: .75rem 1.25rem;
+    font-size: .67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: #9ca3af;
+    border-bottom: 1px solid #eaecf0;
+    white-space: nowrap;
+}
+.rw-table tbody td {
+    padding: .9rem 1.25rem;
+    border-bottom: 1px solid #f4f4f5;
+    vertical-align: middle;
+    font-size: .82rem;
+    color: #374151;
+}
+.rw-table tbody tr:last-child td { border-bottom: none; }
+.rw-table tbody tr:hover { background: #fafbfc; }
+
+/* Badges */
+.jenis-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .28rem .7rem;
+    border-radius: 8px;
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .2px;
+}
+.jenis-cuti  { background: #e0f2fe; color: #0369a1; }
+.jenis-izin  { background: #ede9fe; color: #7c3aed; }
+.jenis-sakit { background: #fee2e2; color: #b91c1c; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .75rem;
+    border-radius: 20px;
+    font-size: .7rem;
+    font-weight: 700;
+}
+.status-menunggu  { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.status-disetujui { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+.status-ditolak   { background: #fff5f5; color: #b91c1c; border: 1px solid #fca5a5; }
+
+/* Hapus button */
+.btn-hapus {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .3rem .7rem;
+    border-radius: 8px;
+    font-size: .72rem;
+    font-weight: 700;
+    background: #fff5f5;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    cursor: pointer;
+    transition: background .15s;
+}
+.btn-hapus:hover { background: #fee2e2; }
+
+/* Lampiran link */
+.lampiran-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .28rem .65rem;
+    border-radius: 8px;
+    font-size: .71rem;
+    font-weight: 700;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    text-decoration: none;
+}
+.lampiran-link:hover { background: #dbeafe; color: #1e40af; }
+
+/* Periode text */
+.periode-main { font-size: .82rem; white-space: nowrap; }
+.periode-sub  { font-size: .72rem; color: #9ca3af; white-space: nowrap; }
+.periode-days {
+    display: inline-block;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: .67rem;
+    font-weight: 700;
+    padding: .1rem .42rem;
+    border-radius: 6px;
+    margin-top: .15rem;
+}
+
+/* Empty */
+.rw-empty {
+    padding: 3.5rem 2rem;
+    text-align: center;
+}
+.rw-empty-icon {
+    width: 68px; height: 68px;
+    background: #f3f4f6;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 1rem;
+}
+
+/* ─── Mobile Cards (hidden on desktop) ──────────── */
+.rw-mobile-list { display: none; padding: .75rem; }
+.rw-mobile-item {
+    background: #fff;
+    border: 1px solid #eef0f4;
+    border-radius: 14px;
+    padding: .95rem;
+    margin-bottom: .6rem;
+    transition: box-shadow .18s;
+}
+.rw-mobile-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,.07); }
+.rw-mobile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .65rem;
+}
+.rw-mobile-mid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .4rem .6rem;
+    margin-bottom: .65rem;
+}
+.rw-mobile-lbl { font-size: .65rem; color: #9ca3af; font-weight: 600; margin-bottom: .1rem; }
+.rw-mobile-val { font-size: .78rem; color: #111827; font-weight: 600; }
+.rw-mobile-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: .6rem;
+    border-top: 1px solid #f4f4f5;
+}
+
+/* ─── PAGINATION — di-style ulang agar senada tema hijau ───
+   Sebelumnya memakai tampilan bawaan Laravel yang polos
+   ("«Previous", "Next»", teks "Showing X to Y of Z results"
+   tanpa styling). Sekarang di-override supaya konsisten
+   dengan desain rounded/hijau di seluruh halaman ini. ── */
+.rw-pagination-wrap {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #f4f4f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .75rem;
+}
+.rw-pagination-wrap nav > div:first-child { display: none; } /* sembunyikan teks default "Showing..." bawaan, kita buat versi sendiri di bawah */
+.rw-pagination-info {
+    font-size: .75rem;
+    color: #9ca3af;
+    font-weight: 500;
+}
+.rw-pagination-wrap .pagination {
+    margin: 0;
+    display: flex;
+    gap: .3rem;
+    list-style: none;
+    padding: 0;
+    flex-wrap: wrap;
+}
+.rw-pagination-wrap .page-item .page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 .6rem;
+    border-radius: 9px;
+    border: 1.5px solid #e5e7eb;
+    color: #374151;
+    font-size: .78rem;
+    font-weight: 700;
+    text-decoration: none;
+    background: #fff;
+    transition: all .15s;
+}
+.rw-pagination-wrap .page-item .page-link:hover {
+    border-color: #0f7a52;
+    color: #0f7a52;
+    background: #f0fdf4;
+}
+.rw-pagination-wrap .page-item.active .page-link {
+    background: #0f7a52;
+    border-color: #0f7a52;
+    color: #fff;
+}
+.rw-pagination-wrap .page-item.disabled .page-link {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #fafbfc;
+    cursor: not-allowed;
+}
+@media (max-width: 480px) {
+    .rw-pagination-wrap { padding: .85rem 1rem; justify-content: center; }
+    .rw-pagination-info { width: 100%; text-align: center; }
+}
+
+/* ─── BULK SELECT — hapus massal riwayat terverifikasi ─── */
+.rw-bulk-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+    padding: .75rem 1.5rem;
+    background: #f8f9fb;
+    border-bottom: 1px solid #f4f4f5;
+}
+.cb-wrap-all {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
+}
+.cb-wrap-all input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: #0f7a52;
+    cursor: pointer;
+}
+.btn-hapus-massal {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .48rem 1rem;
+    border-radius: 9px;
+    font-size: .78rem;
+    font-weight: 700;
+    background: #b91c1c;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: opacity .15s;
+}
+.btn-hapus-massal:hover:not(:disabled) { opacity: .88; }
+.btn-hapus-massal:disabled {
+    background: #f3f4f6;
+    color: #d1d5db;
+    cursor: not-allowed;
+}
+.cb-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .72rem;
+    font-weight: 600;
+    color: #9ca3af;
+    cursor: pointer;
+    user-select: none;
+}
+.cb-wrap input[type="checkbox"] {
+    width: 15px; height: 15px;
+    accent-color: #0f7a52;
+    cursor: pointer;
+}
+@media (max-width: 480px) {
+    .rw-bulk-toolbar { padding: .7rem 1rem; }
+}
+
+/* ─── Responsive ────────────────────────────────── */
+@media (max-width: 768px) {
+    .rw-stats { grid-template-columns: repeat(2, 1fr); }
+    .rw-hero { padding: 1.25rem 1.25rem 1rem; }
+    .rw-hero-title { font-size: 1.1rem; }
+}
+
+@media (max-width: 640px) {
+    /* hide table, show mobile cards */
+    .rw-table-wrap { display: none; }
+    .rw-mobile-list { display: block; }
+    .rw-card-head { padding: .85rem 1rem; }
+    .rw-card { border-radius: 14px; }
+}
+
+@media (max-width: 420px) {
+    .rw-stats { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+    .rw-stat { padding: .7rem .8rem; }
+    .rw-hero-actions { gap: .4rem; }
+    .rw-pill-btn { font-size: .75rem; padding: .4rem .85rem; }
+}
+
+/* Alert */
+.rw-alert {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .9rem 1.1rem;
+    border-radius: 12px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: .85rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    border: 1px solid #bbf7d0;
+}
+</style>
+@endpush
+
+@section('content')
+<div class="rw-wrap">
+
+    {{-- Hero --}}
+    <div class="rw-hero">
+        <div style="position:relative;z-index:1">
+            <p class="rw-hero-title">📋 Riwayat Pengajuan Surat</p>
+            <p class="rw-hero-sub">Semua pengajuan cuti, izin, dan sakit kamu ada di sini</p>
+            <div class="rw-hero-actions">
+                <a href="{{ route('izin.cuti') }}"  class="rw-pill-btn">🏖️ Cuti</a>
+                <a href="{{ route('izin.izin') }}"  class="rw-pill-btn">📋 Izin</a>
+                <a href="{{ route('izin.sakit') }}" class="rw-pill-btn">🏥 Sakit</a>
+            </div>
+        </div>
+    </div>
+
+    {{-- Alert --}}
+    @if(session('success'))
+    <div class="rw-alert">
+        <i class="fas fa-check-circle"></i>
+        <span>{{ session('success') }}</span>
+        <button type="button" class="btn-close btn-sm ms-auto" data-bs-dismiss="alert" style="font-size:.7rem;"></button>
+    </div>
+    @endif
+
+    {{-- Stats --}}
+    @php
+        $total     = $pengajuan->total();
+        $menunggu  = $pengajuan->getCollection()->where('status','menunggu')->count();
+        $disetujui = $pengajuan->getCollection()->where('status','disetujui')->count();
+        $ditolak   = $pengajuan->getCollection()->where('status','ditolak')->count();
+    @endphp
+    <div class="rw-stats">
+        <div class="rw-stat">
+            <div class="rw-stat-icon" style="background:#eef2ff;color:#4f46e5">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div>
+                <div class="rw-stat-val">{{ $total }}</div>
+                <div class="rw-stat-lbl">Total Pengajuan</div>
+            </div>
+        </div>
+        <div class="rw-stat">
+            <div class="rw-stat-icon" style="background:#fffbeb;color:#b45309">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <div class="rw-stat-val">{{ $menunggu }}</div>
+                <div class="rw-stat-lbl">Menunggu</div>
+            </div>
+        </div>
+        <div class="rw-stat">
+            <div class="rw-stat-icon" style="background:#f0fdf4;color:#15803d">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <div class="rw-stat-val">{{ $disetujui }}</div>
+                <div class="rw-stat-lbl">Disetujui</div>
+            </div>
+        </div>
+        <div class="rw-stat">
+            <div class="rw-stat-icon" style="background:#fff5f5;color:#b91c1c">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div>
+                <div class="rw-stat-val">{{ $ditolak }}</div>
+                <div class="rw-stat-lbl">Ditolak</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Tabs --}}
+    <div class="rw-tabs">
+        <button class="rw-tab active" onclick="filterTab('semua',this)">
+            <i class="fas fa-list"></i> Semua <span class="cnt">{{ $total }}</span>
+        </button>
+        <button class="rw-tab" onclick="filterTab('menunggu',this)">
+            <i class="fas fa-clock"></i> Menunggu <span class="cnt">{{ $menunggu }}</span>
+        </button>
+        <button class="rw-tab" onclick="filterTab('disetujui',this)">
+            <i class="fas fa-check"></i> Disetujui <span class="cnt">{{ $disetujui }}</span>
+        </button>
+        <button class="rw-tab" onclick="filterTab('ditolak',this)">
+            <i class="fas fa-times"></i> Ditolak <span class="cnt">{{ $ditolak }}</span>
+        </button>
+    </div>
+
+    {{-- Main Card --}}
+    <div class="rw-card">
+        <div class="rw-card-head">
+            <h6 class="rw-card-head-title">
+                <i class="fas fa-history" style="color:#0f7a52;font-size:.85rem;"></i>
+                Riwayat Surat Saya
+            </h6>
+            <span id="jumlahData" class="rw-count-badge">{{ $total }} data</span>
+        </div>
+
+        {{-- ── TOOLBAR BULK-SELECT: hapus massal riwayat terverifikasi ── --}}
+        @if(!$pengajuan->isEmpty())
+        <div class="rw-bulk-toolbar">
+            <label class="cb-wrap-all">
+                <input type="checkbox" id="cbSelectAll">
+                <span>Pilih semua riwayat terverifikasi (Disetujui/Ditolak)</span>
+            </label>
+            <button type="button" id="btnHapusTerpilih" class="btn-hapus-massal" disabled>
+                <i class="fas fa-trash-alt"></i> Hapus Terpilih (<span id="bulkCount">0</span>)
+            </button>
+        </div>
+        @endif
+
+        @if($pengajuan->isEmpty())
+        <div class="rw-empty">
+            <div class="rw-empty-icon">📭</div>
+            <p class="fw-bold mb-1" style="color:#111827;font-size:.95rem;">Belum ada pengajuan</p>
+            <p class="text-muted mb-3" style="font-size:.83rem;">Kamu belum pernah mengajukan surat apapun</p>
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                <a href="{{ route('izin.cuti') }}"  class="rw-pill-btn" style="background:#064e35;border-color:#064e35;">🏖️ Ajukan Cuti</a>
+                <a href="{{ route('izin.izin') }}"  class="rw-pill-btn" style="background:#064e35;border-color:#064e35;">📋 Ajukan Izin</a>
+                <a href="{{ route('izin.sakit') }}" class="rw-pill-btn" style="background:#064e35;border-color:#064e35;">🏥 Ajukan Sakit</a>
+            </div>
+        </div>
+
+        @else
+
+        {{-- ── DESKTOP TABLE ── --}}
+        <div class="rw-table-wrap">
+            <div style="overflow-x:auto;">
+                <table class="rw-table" id="tblRiwayat">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Jenis</th>
+                            <th>Periode</th>
+                            <th>Keterangan</th>
+                            <th>Lampiran</th>
+                            <th>Status</th>
+                            <th>Tgl Ajuan</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($pengajuan as $i => $p)
+                        <tr data-status="{{ $p->status }}">
+                            <td style="color:#9ca3af;font-size:.75rem;font-weight:600;">
+                                {{ $pengajuan->firstItem() + $i }}
+                            </td>
+
+                            <td>
+                                <span class="jenis-badge jenis-{{ $p->tipe }}">
+                                    @if($p->tipe=='cuti') 🏖️
+                                    @elseif($p->tipe=='izin') 📋
+                                    @else 🏥
+                                    @endif
+                                    {{ ucfirst($p->tipe) }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="periode-main">{{ \Carbon\Carbon::parse($p->tanggal_mulai)->format('d M Y') }}</div>
+                                <div class="periode-sub">s/d {{ \Carbon\Carbon::parse($p->tanggal_selesai)->format('d M Y') }}</div>
+                                <span class="periode-days">
+                                    {{ \Carbon\Carbon::parse($p->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($p->tanggal_selesai)) + 1 }} hari
+                                </span>
+                            </td>
+
+                            <td style="max-width:160px;">
+                                <span title="{{ $p->alasan }}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                                    {{ $p->alasan }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {{-- ✅ DIPERBAIKI: cek lampiran_url secara eksplisit.
+                                     Kalau file_lampiran ada di DB tapi lampiran_url
+                                     null (file hilang dari server), tampilkan label
+                                     "Hilang" yang jelas, bukan link mati ke
+                                     asset('uploads/...') yang akan 404. --}}
+                                @if($p->file_lampiran)
+                                    @if($p->lampiran_url)
+                                        <a href="{{ $p->lampiran_url }}" target="_blank" class="lampiran-link">
+                                            <i class="fas fa-paperclip" style="font-size:.65rem;"></i> Lihat
+                                        </a>
+                                    @else
+                                        <span style="color:#dc2626;font-size:.7rem;" title="File tidak ditemukan di server">
+                                            <i class="fas fa-exclamation-triangle" style="font-size:.65rem;"></i> Hilang
+                                        </span>
+                                    @endif
+                                @else
+                                    <span style="color:#d1d5db;">—</span>
+                                @endif
+                            </td>
+
+                            <td>
+                                @if($p->status=='menunggu')
+                                    <span class="status-badge status-menunggu"><i class="fas fa-clock" style="font-size:.6rem;"></i> Menunggu</span>
+                                @elseif($p->status=='disetujui')
+                                    <span class="status-badge status-disetujui"><i class="fas fa-check" style="font-size:.6rem;"></i> Disetujui</span>
+                                @else
+                                    <span class="status-badge status-ditolak"><i class="fas fa-times" style="font-size:.6rem;"></i> Ditolak</span>
+                                @endif
+                            </td>
+
+                            <td style="white-space:nowrap;">
+                                <div style="font-size:.78rem;">{{ \Carbon\Carbon::parse($p->created_at)->format('d M Y') }}</div>
+                                <div style="font-size:.7rem;color:#9ca3af;">{{ \Carbon\Carbon::parse($p->created_at)->format('H:i') }}</div>
+                            </td>
+
+                            <td>
+                                @if($p->status == 'menunggu')
+                                <form action="{{ route('izin.delete', $p->id) }}" method="POST"
+                                      onsubmit="return confirm('Hapus pengajuan ini? Tindakan ini tidak dapat dibatalkan.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn-hapus">
+                                        <i class="fas fa-trash-alt" style="font-size:.65rem;"></i> Hapus
+                                    </button>
+                                </form>
+                                @else
+                                    <label class="cb-wrap">
+                                        <input type="checkbox" class="cb-verified" value="{{ $p->id }}">
+                                        <span>Pilih</span>
+                                    </label>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- ── MOBILE CARDS ── --}}
+        <div class="rw-mobile-list" id="mobileList">
+            @foreach($pengajuan as $i => $p)
+            <div class="rw-mobile-item" data-status="{{ $p->status }}">
+                <div class="rw-mobile-top">
+                    <span class="jenis-badge jenis-{{ $p->tipe }}">
+                        @if($p->tipe=='cuti') 🏖️
+                        @elseif($p->tipe=='izin') 📋
+                        @else 🏥
+                        @endif
+                        {{ ucfirst($p->tipe) }}
+                    </span>
+                    @if($p->status=='menunggu')
+                        <span class="status-badge status-menunggu"><i class="fas fa-clock" style="font-size:.6rem;"></i> Menunggu</span>
+                    @elseif($p->status=='disetujui')
+                        <span class="status-badge status-disetujui"><i class="fas fa-check" style="font-size:.6rem;"></i> Disetujui</span>
+                    @else
+                        <span class="status-badge status-ditolak"><i class="fas fa-times" style="font-size:.6rem;"></i> Ditolak</span>
+                    @endif
+                </div>
+
+                <div class="rw-mobile-mid">
+                    <div>
+                        <div class="rw-mobile-lbl">PERIODE</div>
+                        <div class="rw-mobile-val">{{ \Carbon\Carbon::parse($p->tanggal_mulai)->format('d M') }} – {{ \Carbon\Carbon::parse($p->tanggal_selesai)->format('d M Y') }}</div>
+                        <span class="periode-days">{{ \Carbon\Carbon::parse($p->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($p->tanggal_selesai)) + 1 }} hari</span>
+                    </div>
+                    <div>
+                        <div class="rw-mobile-lbl">DIAJUKAN</div>
+                        <div class="rw-mobile-val">{{ \Carbon\Carbon::parse($p->created_at)->format('d M Y') }}</div>
+                        <div style="font-size:.7rem;color:#9ca3af;">{{ \Carbon\Carbon::parse($p->created_at)->format('H:i') }}</div>
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <div class="rw-mobile-lbl">KETERANGAN</div>
+                        <div class="rw-mobile-val" style="font-weight:500;color:#374151;">{{ Str::limit($p->alasan, 80) }}</div>
+                    </div>
+                </div>
+
+                <div class="rw-mobile-bottom">
+                    {{-- ✅ DIPERBAIKI: sama seperti versi desktop --}}
+                    @if($p->file_lampiran)
+                        @if($p->lampiran_url)
+                            <a href="{{ $p->lampiran_url }}" target="_blank" class="lampiran-link">
+                                <i class="fas fa-paperclip" style="font-size:.65rem;"></i> Lampiran
+                            </a>
+                        @else
+                            <span style="color:#dc2626;font-size:.75rem;" title="File tidak ditemukan di server">
+                                <i class="fas fa-exclamation-triangle" style="font-size:.65rem;"></i> File Hilang
+                            </span>
+                        @endif
+                    @else
+                        <span style="color:#d1d5db;font-size:.75rem;">Tidak ada lampiran</span>
+                    @endif
+
+                    @if($p->status == 'menunggu')
+                    <form action="{{ route('izin.delete', $p->id) }}" method="POST"
+                          onsubmit="return confirm('Hapus pengajuan ini? Tindakan ini tidak dapat dibatalkan.')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn-hapus">
+                            <i class="fas fa-trash-alt" style="font-size:.65rem;"></i> Hapus
+                        </button>
+                    </form>
+                    @else
+                        <label class="cb-wrap">
+                            <input type="checkbox" class="cb-verified" value="{{ $p->id }}">
+                            <span>Pilih untuk hapus</span>
+                        </label>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        {{-- ── PAGINATION (di-style ulang) ── --}}
+        @if($pengajuan->hasPages())
+        <div class="rw-pagination-wrap">
+            <span class="rw-pagination-info">
+                Menampilkan {{ $pengajuan->firstItem() }}–{{ $pengajuan->lastItem() }} dari {{ $pengajuan->total() }} data
+            </span>
+            {{ $pengajuan->links('pagination::bootstrap-4') }}
+        </div>
+        @endif
+
+        @endif
+    </div>
+    {{-- /rw-card --}}
+
+    {{-- ── Form tersembunyi untuk submit hapus massal (diisi lewat JS) ── --}}
+    <form id="bulkDeleteForm" action="{{ route('izin.hapusTerverifikasi') }}" method="POST" style="display:none;">
+        @csrf
+        @method('DELETE')
+        <div id="bulkDeleteInputs"></div>
+    </form>
+
+</div>
+{{-- /rw-wrap --}}
+
+@push('scripts')
+<script>
+function filterTab(status, el) {
+    // update active tab
+    document.querySelectorAll('.rw-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+
+    // filter desktop table rows
+    let visible = 0;
+    document.querySelectorAll('#tblRiwayat tbody tr').forEach(r => {
+        const show = status === 'semua' || r.dataset.status === status;
+        r.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+
+    // filter mobile cards
+    document.querySelectorAll('.rw-mobile-item').forEach(c => {
+        const show = status === 'semua' || c.dataset.status === status;
+        c.style.display = show ? '' : 'none';
+    });
+
+    // count falls back to all visible cards on mobile if table is hidden
+    const badge = document.getElementById('jumlahData');
+    if (badge) badge.textContent = visible + ' data';
+}
+
+// ── BULK SELECT: hapus massal riwayat terverifikasi ─────────────────
+(function initBulkSelect() {
+    const cbSelectAll   = document.getElementById('cbSelectAll');
+    const btnHapus      = document.getElementById('btnHapusTerpilih');
+    const bulkCountSpan = document.getElementById('bulkCount');
+    const bulkForm      = document.getElementById('bulkDeleteForm');
+    const bulkInputsBox = document.getElementById('bulkDeleteInputs');
+
+    if (!cbSelectAll || !btnHapus) return; // halaman kosong, tidak ada toolbar
+
+    function getCheckedIds() {
+        const ids = new Set();
+        document.querySelectorAll('.cb-verified:checked').forEach(cb => ids.add(cb.value));
+        return Array.from(ids);
+    }
+
+    function updateBulkUI() {
+        const jumlah = getCheckedIds().length;
+        bulkCountSpan.textContent = jumlah;
+        btnHapus.disabled = jumlah === 0;
+    }
+
+    document.querySelectorAll('.cb-verified').forEach(cb => {
+        cb.addEventListener('change', updateBulkUI);
+    });
+
+    cbSelectAll.addEventListener('change', function () {
+        const isChecked = this.checked;
+        document.querySelectorAll('.cb-verified').forEach(cb => {
+            // hanya toggle checkbox yang sedang terlihat (sesuai tab filter aktif
+            // & sesuai tampilan desktop/mobile yang sedang aktif)
+            const row = cb.closest('tr') || cb.closest('.rw-mobile-item');
+            const terlihat = row && row.offsetParent !== null;
+            if (terlihat) cb.checked = isChecked;
+        });
+        updateBulkUI();
+    });
+
+    btnHapus.addEventListener('click', function () {
+        const ids = getCheckedIds();
+        if (ids.length === 0) return;
+
+        const konfirmasi = confirm(
+            `Hapus ${ids.length} riwayat pengajuan terverifikasi ini? Tindakan ini tidak dapat dibatalkan.`
+        );
+        if (!konfirmasi) return;
+
+        bulkInputsBox.innerHTML = '';
+        ids.forEach(id => {
+            const input = document.createElement('input');
+            input.type  = 'hidden';
+            input.name  = 'ids[]';
+            input.value = id;
+            bulkInputsBox.appendChild(input);
+        });
+
+        bulkForm.submit();
+    });
+})();
+</script>
+@endpush
+@endsection
